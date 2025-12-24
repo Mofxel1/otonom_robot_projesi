@@ -40,7 +40,7 @@ class ZigzagMission:
 
         waypoints = []
         # Duvarlara çok yapışmamak için kenarlardan biraz (margin) içeriden başla
-        margin = 0.3 
+        margin = 0.5 
         current_x = min_x + margin
         direction = 1  # 1: Yukarı, -1: Aşağı
 

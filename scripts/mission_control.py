@@ -84,15 +84,19 @@ class MissionControl:
         """
         rospy.loginfo("--- ZIGZAG GÖREVİ TETİKLENİYOR ---")
         
-        # Bulduğumuz min/max değerlerinden sanal bir "Oda" oluşturuyoruz (4 Köşe)
-        # Eğer boundary_explorer gerçek köşe listesi verseydi onu kullanırdık.
-        # Şimdilik "Bounding Box" yöntemi en güvenlisidir.
+	# --- YENİ EKLENEN KISIM: SINIRLARI KAYDET ---
+        # GUI'nin okuması için sınırları ROS parametresi olarak atıyoruz
+        # Format: [min_x, min_y, max_x, max_y]
+        boundaries = [self.min_x, self.min_y, self.max_x, self.max_y]
+        rospy.set_param("/op_boundaries", boundaries)
+        rospy.loginfo(f"Operasyon sınırları kaydedildi: {boundaries}")
+        # -------------------------------------------
         
         corners = [
-            (self.min_x, self.min_y), # Sol Alt
-            (self.max_x, self.min_y), # Sağ Alt
-            (self.max_x, self.max_y), # Sağ Üst
-            (self.min_x, self.max_y)  # Sol Üst
+            (self.min_x, self.min_y), 
+            (self.max_x, self.min_y), 
+            (self.max_x, self.max_y), 
+            (self.min_x, self.max_y)  
         ]
         
         # Alan kontrolü

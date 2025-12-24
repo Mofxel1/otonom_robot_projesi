@@ -1,6 +1,6 @@
 image: /home/jetson/catkin_ws/src/otonom_robot/maps/otonom_harita.pgm
 resolution: 0.050000
-origin: [-1.311190, -2.173860, 0.000000]
+origin: [-4.217658, -4.826494, 0.000000]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196

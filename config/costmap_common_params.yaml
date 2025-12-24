@@ -16,7 +16,7 @@ robot_radius: 0.20
 # Engellerin etrafına ne kadar "yasak bölge" ekleneceği.
 # 0.55 çok büyüktür, robot kapılardan geçemeyebilir.
 # 0.35 - 0.40 arası iç mekan için idealdir.
-inflation_radius: 0.35
+inflation_radius: 0.55
 
 # --- Sensör Kaynakları ---
 observation_sources: laser_scan_sensor

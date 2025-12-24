@@ -1,0 +1,36 @@
+transform_tolerance: 0.5
+# --- Engel Algılama Mesafeleri ---
+# Lidar'ın engelleri ne kadar uzaktan haritaya ekleyeceği (2.5m ideal)
+obstacle_range: 2.5
+# Lidar'ın engelleri ne kadar uzaktan temizleyeceği (3.0m ideal)
+raytrace_range: 3.0
+
+# --- ROBOT ŞEKLİ (Kobuki İçin En Önemli Ayar) ---
+# Eski 'footprint' (kare) ayarını siliyoruz.
+# Kobuki yuvarlak olduğu için 'robot_radius' kullanmak hesaplamayı hızlandırır
+# ve takılmaları önler.
+# Kobuki'nin fiziksel yarıçapı ~17.5cm'dir. 20cm (0.20) güvenli bir değerdir.
+robot_radius: 0.20
+
+# --- Şişirme (Güvenlik Alanı) ---
+# Engellerin etrafına ne kadar "yasak bölge" ekleneceği.
+# 0.55 çok büyüktür, robot kapılardan geçemeyebilir.
+# 0.35 - 0.40 arası iç mekan için idealdir.
+inflation_radius: 0.35
+
+# --- Sensör Kaynakları ---
+observation_sources: laser_scan_sensor
+
+# --- Lidar Yapılandırması ---
+laser_scan_sensor: 
+  # ÖNEMLİ: RPLidar'ın TF çerçeve adı 'base_scan' değil 'laser'dir.
+  # 'haritalama.launch' dosyasındaki static_transform_publisher ile uyumlu olmalı.
+  sensor_frame: laser
+  
+  data_type: LaserScan
+  
+  # Scan Fixer kullandığımız için temizlenmiş veriyi dinliyoruz
+  topic: /scan
+  
+  marking: true
+  clearing: true

@@ -1,0 +1,54 @@
+<launch>
+    <arg name="model" default="waffle_pi"/>
+    <arg name="x_pos" default="-8.0" />
+    <arg name="y_pos" default="0.0" />
+    <arg name="z_pos" default="0.0" />
+    <arg name="yaw"   default="0.0" />
+    
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find otonom_robot)/worlds/18x14.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" value="false"/>
+        <arg name="debug" value="false"/>
+    </include>
+
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find otonom_robot)/urdf/custom_turtlebot3_$(arg model).urdf.xacro" />
+
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"
+          args="-urdf -model turtlebot3_$(arg model) -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -Y $(arg yaw) -param robot_description" />
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+    <node name="cartographer_node" pkg="cartographer_ros"
+          type="cartographer_node" args="
+              -configuration_directory $(find otonom_robot)/config
+              -configuration_basename cartographer_config.lua"
+          output="screen">
+        <remap from="scan" to="/scan" />
+    </node>
+
+    <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+          type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+
+    <node name="scan_fixer_node" pkg="otonom_robot" type="scan_fixer.py" output="screen" />
+    
+    <node name="boundary_explorer_node" pkg="otonom_robot" type="boundary_explorer_v2.py" output="screen" />
+    <node name="mission_control_node" pkg="otonom_robot" type="mission_control.py" output="screen" />
+    
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+        <rosparam file="$(find otonom_robot)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find otonom_robot)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+        <rosparam file="$(find otonom_robot)/config/local_costmap_params.yaml" command="load" />
+        <rosparam file="$(find otonom_robot)/config/global_costmap_params.yaml" command="load" />
+        <rosparam file="$(find otonom_robot)/config/base_local_planner_params.yaml" command="load" />
+        
+        <remap from="cmd_vel" to="/cmd_vel"/>
+        <remap from="odom" to="/odom"/>
+        <remap from="scan" to="/scan_fixed"/>
+    </node>
+    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find otonom_robot)/rviz/otonom_robot.rviz" required="true" />
+
+</launch>

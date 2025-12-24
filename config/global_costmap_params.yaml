@@ -1,0 +1,38 @@
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_footprint
+  update_frequency: 2.0  # Jetson için 1.0 veya 2.0 idealdir
+  publish_frequency: 0.5
+  
+  static_map: true       # Static Layer kullanıyoruz ama ana bayrak true kalsın
+  rolling_window: false
+  
+  # Tolerans
+  transform_tolerance: 1.5
+  
+  plugins:
+    - {name: static_layer,            type: "costmap_2d::StaticLayer"}
+    - {name: obstacle_layer,          type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer,         type: "costmap_2d::InflationLayer"}
+
+static_layer:
+  enabled: true
+  
+  # DEĞİŞİKLİK BURADA:
+  # Robot artık bizim özel kanalımızı dinleyecek
+  map_topic: "/map_navigation" 
+  
+  first_map_only: false        
+  subscribe_to_updates: false  
+  track_unknown_space: true
+  use_maximum: true
+
+obstacle_layer:
+  enabled: true
+  observation_sources: scan
+  scan: {sensor_frame: laser, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+
+inflation_layer:
+  enabled: true
+  cost_scaling_factor: 4.0   # Biraz düşürdük, duvarlar daha "korkutucu" olsun
+  inflation_radius: 0.55     # Duvarlardan biraz daha uzak dursun

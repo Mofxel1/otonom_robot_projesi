@@ -1,0 +1,38 @@
+TrajectoryPlannerROS:
+  # --- 1. İVME LİMİTLERİ (EN ÖNEMLİ AYAR) ---
+  # Robotun 0'dan tam hıza çıkması ne kadar sürsün?
+  # Düşük değer = Yumuşak kalkış ve duruş (Limuzin modu).
+  # Yüksek değer = Ani kalkış ve duruş (Yarış arabası modu).
+  
+  acc_lim_x: 0.3       # İleri ivme (Eskiden 2.5 olabilir). Çok düşürdük.
+  acc_lim_theta: 0.5   # Dönüş ivmesi (Eskiden 3.2 olabilir). Artık yavaşça dönmeye başlayacak.
+
+  # --- 2. HIZ LİMİTLERİ ---
+  max_vel_x: 0.18      # Maksimum hız (Zaten düşüktü, kalsın)
+  min_vel_x: 0.05
+  
+  max_vel_theta: 0.6   # Maksimum dönüş hızı. (Bunu 1.0'dan 0.6'ya çekiyoruz)
+  min_vel_theta: -0.6
+  min_in_place_vel_theta: 0.3
+
+  # --- 3. SİMÜLASYON SÜRESİ (DİKKAT!) ---
+  # İvmeyi düşürdüğümüz için, robotun hızlanması vakit alacak.
+  # Bu yüzden robotun geleceği tahmin etme süresini (sim_time)
+  # biraz artırmalıyız ki "Ben bu ivmeyle o hıza ulaşamam" diyip durmasın.
+  sim_time: 1.0       # 1.0'dan 1.5'e çıkarıyoruz. (Daha dengeli planlama)
+
+  # --- 4. HESAPLAMA YÜKÜNÜ AZALTMA (Devam) ---
+  vx_samples: 6
+  vtheta_samples: 10
+  
+  # --- 5. HEDEF TOLERANSI ---
+  # Robot hedefe tam milimetrik oturmaya çalışırken titrer.
+  # Bunu biraz gevşetelim.
+  yaw_goal_tolerance: 0.15  # 0.05 yerine 0.15 radyan (~8 derece hata payı)
+  xy_goal_tolerance: 0.15   # 0.10 yerine 0.15 metre (15 cm hata payı)
+
+  # --- 6. PUANLAMA (Kafa Karışıklığını Önle) ---
+  # Robotun tek derdi hedefe gitmek olsun, engele çok takılmasın (zaten durduruyoruz).
+  pdist_scale: 0.8
+  gdist_scale: 0.4
+  occdist_scale: 0.01

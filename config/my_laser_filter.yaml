@@ -1,0 +1,12 @@
+scan_filter_chain:
+  - name: range_filter
+    type: laser_filters/LaserScanRangeFilter
+    params:
+      use_message_range_limits: false
+      # 1. KÖR NOKTA (Robotun Kendisi): 35 cm'den yakın verileri temizle
+      lower_threshold: 0.3
+      
+
+      
+      # Bu sınırların dışındaki verileri ne yapalım? (.inf = Boşluk)
+      lower_replacement_value: .inf

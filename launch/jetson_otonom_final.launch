@@ -15,7 +15,8 @@
     <node name="cartographer_node" pkg="cartographer_ros"
           type="cartographer_node" args="
               -configuration_directory $(find otonom_robot)/config
-              -configuration_basename cartographer_config.lua"
+              -configuration_basename cartographer_config.lua
+              -minloglevel=2"
           output="screen">
         
         <remap from="scan" to="/scan" />
@@ -53,5 +54,4 @@
 
     <node name="mission_control_node" pkg="otonom_robot" type="mission_control.py" output="screen" />
     
-
 </launch>

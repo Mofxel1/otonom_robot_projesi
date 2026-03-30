@@ -4,7 +4,7 @@ scan_filter_chain:
     params:
       use_message_range_limits: false
       # 1. KÖR NOKTA (Robotun Kendisi): 35 cm'den yakın verileri temizle
-      lower_threshold: 0.3
+      lower_threshold: 0.05
       
 
       

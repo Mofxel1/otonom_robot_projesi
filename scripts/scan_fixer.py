@@ -20,7 +20,7 @@ def scan_callback(scan_msg):
     # --- AYAR: KÖR NOKTA MESAFESİ (Metre) ---
     # Robotun yarıçapı + biraz güvenlik payı.
     # Kobuki için 0.30m (30cm) idealdir, çıtaları yok eder.
-    min_valid_distance = 0.30 
+    min_valid_distance = 0.05
     # ----------------------------------------
 
     for i in range(len(current_ranges)):

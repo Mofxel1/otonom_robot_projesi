@@ -20,7 +20,7 @@ class ZigzagMission:
         else:
              rospy.loginfo("ZigzagNavigator: Move Base hazır.")
 
-        self.scan_width = 0.5  # Zigzag aralığı (Metre)
+        self.scan_width = 1.5  # Zigzag aralığı (Metre)
 
     def calculate_zigzag_path(self, corners):
         """

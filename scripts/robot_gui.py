@@ -54,14 +54,16 @@ class RobotGUI(QMainWindow):
         self.processor = MapProcessor(self.map_folder)
         
         # YENİ TOPIC: gui_zones
-        self.map_pub = rospy.Publisher('/gui_zones', OccupancyGrid, queue_size=1, latch=False)
+        self.map_pub = rospy.Publisher('/gui_zones', OccupancyGrid, queue_size=1, latch=True)
         
         self.initUI()
         self.load_map_data()
         
+        # --- İŞTE HAYAT KURTARAN HAMLE BURADA ---
+        # Costmap'in tembellik yapmasını engellemek için saniyede bir güncel saatle haritayı basıyoruz!
         self.timer = QTimer()
         self.timer.timeout.connect(self.publish_map_to_ros)
-        self.timer.start(2000) 
+        self.timer.start(200) # Saniyede 1 kere (1000 ms) yayınla
 
     def initUI(self):
         central_widget = QWidget()
@@ -207,6 +209,7 @@ class RobotGUI(QMainWindow):
         mask_layer = cv2.flip(mask_layer, 0)
 
         msg = OccupancyGrid()
+        # ZAMAN DAMGASI ÇOK KRİTİK: Her çağrıldığında yeni zaman damgası alır.
         msg.header.stamp = rospy.Time.now()
         msg.header.frame_id = "map"
         msg.info.resolution = self.resolution
@@ -282,7 +285,7 @@ class RobotGUI(QMainWindow):
         for (px, py) in self.current_draw_points:
             wx = self.origin[0] + (px * self.resolution)
             wy = self.origin[1] + ((h - py) * self.resolution)
-            world_points.append((wx, wy))
+            world_points.append([float(wx), float(wy)])
 
         if self.mode == "FORBID":
             self.processor.add_forbidden_zone(world_points)

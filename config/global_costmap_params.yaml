@@ -3,38 +3,44 @@ global_costmap:
   robot_base_frame: base_footprint
   update_frequency: 2.0  
   publish_frequency: 0.5
-  static_map: true       
+  static_map: false      
   rolling_window: false
   transform_tolerance: 1.5
   resolution: 0.05
   always_send_full_costmap: true 
   
   plugins:
-    - {name: static_layer,    type: "costmap_2d::StaticLayer"}
-    - {name: gui_layer,       type: "costmap_2d::StaticLayer"}   # YENİ GUI KATMANI
-    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"}  # MÜHENDİSİN GÖZLÜĞÜ GERİ GELDİ!
+    - {name: static_layer,    type: "costmap_2d::StaticLayer"}   
+    - {name: obstacle_layer,  type: "costmap_2d::ObstacleLayer"} 
+    - {name: gui_layer,       type: "costmap_2d::StaticLayer"}    
     - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
 
   static_layer:
     enabled: true
     map_topic: "/map" 
     first_map_only: false        
-    subscribe_to_updates: false  
+    subscribe_to_updates: true   
     track_unknown_space: true
-    use_maximum: true
-    
-  gui_layer:
-    map_topic: "/gui_zones" 
-    use_maximum: true
-    trinary_costmap: false  # 0-100 arası tüm gri değerleri (50) okuyabilmesi için gerekli
+    # HATA 1 DÜZELTİLDİ: Buldozer modu aktif.
+    use_maximum: false          
 
-  # BU KISMI İÇERİ (GİRİNTİLİ) OLARAK EKLİYORUZ:
   obstacle_layer:
     enabled: true
+    combination_method: 1        
     observation_sources: scan
     scan: {sensor_frame: laser, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+    
+  gui_layer:
+    enabled: true
+    map_topic: "/gui_zones" 
+    # HATA 2 DÜZELTİLDİ: Sahte boş haritaya kilitlenip sağır olmasını engeller.
+    first_map_only: false
+    subscribe_to_updates: false  
+    use_maximum: true
+    # HATA 3 DÜZELTİLDİ: Çizgileri "Beton Duvara (254)" çevirir ki haritada şişip belirginleşsin.
+    trinary_costmap: true  
 
   inflation_layer:
     enabled: true
-    cost_scaling_factor: 10.0   
-    inflation_radius: 0.25
+    cost_scaling_factor: 6.0   
+    inflation_radius: 0.35

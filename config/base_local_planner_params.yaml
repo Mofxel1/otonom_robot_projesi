@@ -1,36 +1,38 @@
 TrajectoryPlannerROS:
   # --- 1. İVME LİMİTLERİ ---
   acc_lim_x: 1.0       
-  acc_lim_theta: 1.5   
+  acc_lim_theta: 1.0   
 
   # --- 2. HIZ LİMİTLERİ ---
   max_vel_x: 0.18      
   min_vel_x: 0.05
-  max_vel_theta: 0.6   
-  min_vel_theta: -0.6
-  min_in_place_vel_theta: 0.3
-  escape_vel: -0.1     # YENİ: Sıkışırsa geri geri kaçabilme yeteneği!
+  max_vel_theta: 0.4   
+  min_vel_theta: -0.4
+  # Robotun zemine tutunup ince açı ayarı yapabilmesi için minimum tork gücü:
+  #min_in_place_vel_theta: 0.20 
+  #escape_vel: -0.1     
 
   # --- 3. SİMÜLASYON SÜRESİ ---
-  sim_time: 2.0        
+  # Robot hedefe çok yakınken uzağı düşünmesin diye 1.5'e çekildi:
+  sim_time: 1.5        
 
   # --- 4. HESAPLAMA YÜKÜNÜ AZALTMA ---
   vx_samples: 8
   vtheta_samples: 20
   
-  # --- YENİ 5. ROBOT FİZİĞİ VE SÜRÜŞ AKICILIĞI (KRİTİK!) ---
-  holonomic_robot: false        # Turtlebot yengeç gibi yan gidemez, bunu kesinlikle bilmeli!
-  heading_scoring: true         # Rotaya önce burnunu çevirsin
-  heading_scoring_timestep: 0.8 # Burnunu çevireceği rotanın ilerisine baksın
-  dwa: true                     # Dar alanlarda pürüzsüz kıvrılma (Dinamik Pencere)
+  # --- 5. ROBOT FİZİĞİ VE SÜRÜŞ AKICILIĞI ---
+  holonomic_robot: false        
+  # HATA BURADAYDI: Robot artık hedefin dibinde burnunu zorla çevirmeye çalışıp kilitlenmeyecek!
+  heading_scoring: false        
+  dwa: true                     
   
-  # --- 6. HEDEF TOLERANSI ---
-  yaw_goal_tolerance: 0.15  
-  xy_goal_tolerance: 0.15   
-  latch_xy_goal_tolerance: true # YENİ: Hedefe varınca milimlik düzeltme için dans etmeyi bıraksın
+  # --- 6. HEDEF TOLERANSI (Gevşetildi) ---
+  yaw_goal_tolerance: 0.25      # 0.15'ten 0.25'e (Açısal kilitlenmeyi çözer)
+  xy_goal_tolerance: 0.20       # 0.15'ten 0.20'ye (Hedefin dibinde daha rahat durur)
+  latch_xy_goal_tolerance: true 
 
-  # --- 7. PUANLAMA (DENGELİ AYARLAR) ---
-  meter_scoring: true          
-  path_distance_bias: 24.0     
-  goal_distance_bias: 24.0     
-  occdist_scale: 0.08
+  # --- 7. PUANLAMA (İSİMLER DÜZELTİLDİ VE KORKU DÜŞÜRÜLDÜ) ---
+  meter_scoring: true         
+  #pdist_scale: 0.6        # path_distance_bias YERİNE
+  #gdist_scale: 0.8        # goal_distance_bias YERİNE
+  #occdist_scale: 0.01     # Hedefin etrafındaki engellerden korkup kilitlenmemesi için düşürüldü.

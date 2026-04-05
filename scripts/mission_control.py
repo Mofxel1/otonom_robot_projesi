@@ -152,6 +152,9 @@ class MissionControl:
         
         # --- [KRİTİK] SAHTE YAYINI DURDUR VE GUI'Yİ BAŞLAT ---
         self.gui_launched = True
+        
+        self.dummy_pub.unregister()
+        
         rospy.sleep(1.0) # Geçiş için kısa bir nefes
         
         gui_path = os.path.expanduser("~/catkin_ws/src/otonom_robot/scripts/robot_gui.py")

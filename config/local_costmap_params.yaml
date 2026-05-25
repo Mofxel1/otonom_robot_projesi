@@ -12,18 +12,18 @@ local_costmap:
 
   plugins:
     - {name: obstacle_layer,      type: "costmap_2d::ObstacleLayer"}
-    - {name: gui_layer,           type: "costmap_2d::StaticLayer"}    # KRAL BURAYA DA GELDİ
+    - {name: gui_layer,           type: "costmap_2d::StaticLayer"}   
     - {name: inflation_layer,     type: "costmap_2d::InflationLayer"}
 
-  # İŞTE BURASI İÇERİ (GİRİNTİLİ) ALINDI:
+  
   obstacle_layer:
     enabled: true
     observation_sources: scan
-    scan: {sensor_frame: laser, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+    scan: {data_type: LaserScan, topic: /scan, marking: true, clearing: true}
 
   inflation_layer:
     enabled: true
-    cost_scaling_factor: 6.0  # 5.0'dan düşürdük, daha erken yavaşlasın
+    cost_scaling_factor: 6.0  
     inflation_radius: 0.35
    
   gui_layer:

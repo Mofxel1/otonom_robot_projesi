@@ -161,7 +161,7 @@ class RobotGUI(QMainWindow):
         if self.map_image is None: return
         
         # RViz yönüne çevir
-        display_img = cv2.flip(self.map_image.copy(), 0)
+        display_img = self.map_image.copy()
         
         # Çizilmekte olan noktalar (Mavi)
         for pt in self.current_draw_points:

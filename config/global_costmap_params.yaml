@@ -21,23 +21,20 @@ global_costmap:
     first_map_only: false        
     subscribe_to_updates: true   
     track_unknown_space: true
-    # HATA 1 DÜZELTİLDİ: Buldozer modu aktif.
     use_maximum: false          
 
   obstacle_layer:
     enabled: true
     combination_method: 1        
     observation_sources: scan
-    scan: {sensor_frame: laser, data_type: LaserScan, topic: /scan, marking: true, clearing: true}
+    scan: {data_type: LaserScan, topic: /scan, marking: true, clearing: true}
     
   gui_layer:
     enabled: true
     map_topic: "/gui_zones" 
-    # HATA 2 DÜZELTİLDİ: Sahte boş haritaya kilitlenip sağır olmasını engeller.
     first_map_only: false
     subscribe_to_updates: false  
     use_maximum: true
-    # HATA 3 DÜZELTİLDİ: Çizgileri "Beton Duvara (254)" çevirir ki haritada şişip belirginleşsin.
     trinary_costmap: true  
 
   inflation_layer:

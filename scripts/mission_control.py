@@ -8,49 +8,43 @@ import sys
 import os
 import subprocess
 from std_msgs.msg import Bool, String
-from std_srvs.srv import Empty 
-from nav_msgs.msg import OccupancyGrid # Yeni eklendi
-
-# --- YENİ ZIGZAG MODÜLÜNÜ ÇAĞIRIYORUZ ---
-from zigzag_navigator import ZigzagMission
+from std_srvs.srv import Empty
+from nav_msgs.msg import OccupancyGrid
 
 class MissionControl:
     def __init__(self):
         rospy.init_node('mission_control_node')
-        
-        # --- [KRİTİK] MOVE BASE KİLİDİNİ KIRAN DUMMY PUBLISHER ---
-        self.gui_launched = False 
-        self.dummy_pub = rospy.Publisher('/gui_zones', OccupancyGrid, queue_size=1, latch=True)
-        # Cartographer haritasını dinleyip aynı boyutta şeffaf katman üreteceğiz
-        self.map_sub = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
-        # ----------------------------------------------------------
 
         self.explorer_pub = rospy.Publisher('/explorer_enabled', Bool, queue_size=1, latch=True)
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
-        
+
         self.state = 'INITIALIZING'
         self.wall_follow_start_pos = None
         self.exploration_started_flag = False
-        
-        # Sınırları takip etmek için değişkenler
+
         self.min_x, self.max_x = sys.float_info.max, -sys.float_info.max
         self.min_y, self.max_y = sys.float_info.max, -sys.float_info.max
-        
+
+        # GUI başlayana kadar gui_layer'ın bloke etmemesi için boş map publisher
+        self._gui_zones_pub = rospy.Publisher('/gui_zones', OccupancyGrid, queue_size=1, latch=True)
+        self._map_sub = rospy.Subscriber('/map', OccupancyGrid, self._publish_empty_gui_zones)
+
         rospy.Subscriber("/boundary_explorer_node/state", String, self.explorer_state_callback)
-        
+
         rospy.loginfo("GÖREV KONTROL MERKEZİ BAŞLATILDI.")
         self.run()
 
-    def map_callback(self, msg):
-        """GUI açılana kadar move_base'i 'boş harita' ile kandırır"""
-        if not self.gui_launched:
-            blank_map = OccupancyGrid()
-            blank_map.header = msg.header
-            blank_map.info = msg.info
-            # Tüm pikselleri 0 (maliyetsiz/şeffaf) yapıyoruz
-            blank_map.data = [0] * len(msg.data)
-            self.dummy_pub.publish(blank_map)
+    def _publish_empty_gui_zones(self, msg):
+        """Harita boyutu belli olunca bir kez boş gui_zones bas, sonra aboneliği kes."""
+        empty = OccupancyGrid()
+        empty.header = msg.header
+        empty.info = msg.info
+        empty.data = [0] * (msg.info.width * msg.info.height)
+        self._gui_zones_pub.publish(empty)
+        # Bir kez yetti, sürekli dinlemeye gerek yok
+        self._map_sub.unregister()
+        rospy.loginfo("Boş gui_zones yayınlandı, move_base başlayabilir.")
 
     def explorer_state_callback(self, msg):
         if msg.data == 'duvari_takip_et' and self.wall_follow_start_pos is None:
@@ -94,77 +88,47 @@ class MissionControl:
             reset()
         except: pass
 
-    def execute_zigzag_mission(self):
-        rospy.loginfo("--- ZIGZAG GÖREVİ TETİKLENİYOR ---")
-        
-        boundaries = [self.min_x, self.min_y, self.max_x, self.max_y]
-        rospy.set_param("/op_boundaries", boundaries)
-        rospy.loginfo(f"Operasyon sınırları kaydedildi: {boundaries}")
-        
-        corners = [
-            (self.min_x, self.min_y), 
-            (self.max_x, self.min_y), 
-            (self.max_x, self.max_y), 
-            (self.min_x, self.max_y)  
-        ]
-        
-        if (self.max_x - self.min_x) < 0.5 or (self.max_y - self.min_y) < 0.5:
-            rospy.logwarn("Taranacak alan çok küçük! Zigzag iptal ediliyor.")
-            return
-
-        ziggy = ZigzagMission()
-        ziggy.execute_mission(corners)
-
     def run(self):
         rospy.sleep(2.0)
         rospy.loginfo("FAZ 1: DUVAR TAKİBİ BAŞLATILIYOR...")
         self.explorer_pub.publish(Bool(True))
-        
+
         rate = rospy.Rate(5)
         while not rospy.is_shutdown():
             current_pos = self.get_robot_pose()
             if self.wall_follow_start_pos and current_pos:
                 self.update_boundaries(current_pos.x, current_pos.y)
-                dist = math.sqrt((current_pos.x - self.wall_follow_start_pos.x)**2 + 
+                dist = math.sqrt((current_pos.x - self.wall_follow_start_pos.x)**2 +
                                  (current_pos.y - self.wall_follow_start_pos.y)**2)
-                
-                if self.exploration_started_flag and dist > 2.0: 
-                    self.exploration_started_flag = False 
-                
+
+                if self.exploration_started_flag and dist > 2.0:
+                    self.exploration_started_flag = False
+
                 if not self.exploration_started_flag and dist < 1.0 and self.wall_follow_start_pos:
                     rospy.loginfo("Tur tamamlandı! Duvar takibi bitiyor.")
                     self.explorer_pub.publish(Bool(False))
                     rospy.sleep(1.0)
                     self.refresh_costmaps()
-                    break 
+                    break
             rate.sleep()
 
-        rospy.loginfo("FAZ 2: ZIGZAG TARAMA BAŞLATILIYOR...")
-        self.execute_zigzag_mission()
-        
-        rospy.loginfo("FAZ 3: KAYIT VE GUI...")
+        rospy.loginfo("FAZ 2: KAYIT VE GUI...")
         self.save_map_automatically()
         self.refresh_costmaps()
-        
+
         rospy.loginfo("\n===========================================")
         rospy.loginfo(" BÜTÜN GÖREVLER TAMAMLANDI. GUI AÇILIYOR... ")
         rospy.loginfo("===========================================\n")
-        
-        # --- [KRİTİK] SAHTE YAYINI DURDUR VE GUI'Yİ BAŞLAT ---
-        self.gui_launched = True
-        
-        self.dummy_pub.unregister()
-        
-        rospy.sleep(1.0) # Geçiş için kısa bir nefes
-        
+
+        rospy.sleep(1.0)
+
         gui_path = os.path.expanduser("~/catkin_ws/src/otonom_robot/scripts/robot_gui.py")
         if os.path.exists(gui_path):
             env = os.environ.copy()
-            # Popen kullanarak arka planda başlatıyoruz ki MissionControl kilitlenmesin
             subprocess.Popen(["python3", gui_path], env=env)
         else:
             rospy.logerr(f"GUI bulunamadı: {gui_path}")
-            
+
         rospy.loginfo("Sistem Kapatılıyor.")
         rospy.spin()
 

@@ -4,7 +4,7 @@ TrajectoryPlannerROS:
   acc_lim_theta: 1.0   
 
   # --- 2. HIZ LİMİTLERİ ---
-  max_vel_x: 0.18      
+  max_vel_x: 0.20      
   min_vel_x: 0.05
   max_vel_theta: 0.4   
   min_vel_theta: -0.4

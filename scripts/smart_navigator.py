@@ -4,6 +4,7 @@
 import rospy
 import actionlib
 import math
+import tf  
 import dynamic_reconfigure.client
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from sensor_msgs.msg import LaserScan
@@ -18,12 +19,12 @@ class SmartNavigator:
         self.current_speed_mode = "NORMAL"
         
         # Hız Ayarları
-        self.NORMAL_SPEED = 0.18
-        self.SLOW_SPEED = 0.05
+        self.NORMAL_SPEED = 0.2
+        self.SLOW_SPEED = 0.15 
+        
+        self.tf_listener = tf.TransformListener()
         
         # Dynamic Reconfigure (Hız değiştirmek için)
-        # Not: Config dosyanızdaki planner ismine göre burası değişebilir.
-        # Genelde "/move_base/TrajectoryPlannerROS" veya "/move_base/DWAPlannerROS" olur.
         self.reconf_client = None
         try:
             self.reconf_client = dynamic_reconfigure.client.Client("/move_base/TrajectoryPlannerROS", timeout=2.0)
@@ -68,7 +69,6 @@ class SmartNavigator:
     def scan_callback(self, msg):
         ranges = list(msg.ranges)
         total = len(ranges)
-        # Ön taraf %50 merkezi (İsteğin üzerine)
         idx_start = int(total * 0.47)
         idx_end   = int(total * 0.53)
         front_slice = ranges[idx_start : idx_end]
@@ -84,7 +84,21 @@ class SmartNavigator:
         goal.target_pose.header.stamp = rospy.Time.now()
         goal.target_pose.pose.position.x = x
         goal.target_pose.pose.position.y = y
-        goal.target_pose.pose.orientation.w = 1.0
+        
+        # --- DİNAMİK YÖN HESAPLAMASI (Robotun hedefe dönerek gitmesi) ---
+        try:
+            (trans, rot) = self.tf_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+            current_x = trans[0]
+            current_y = trans[1]
+            theta = math.atan2(y - current_y, x - current_x)
+            quaternion = tf.transformations.quaternion_from_euler(0, 0, theta)
+            
+            goal.target_pose.pose.orientation.x = quaternion[0]
+            goal.target_pose.pose.orientation.y = quaternion[1]
+            goal.target_pose.pose.orientation.z = quaternion[2]
+            goal.target_pose.pose.orientation.w = quaternion[3]
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            goal.target_pose.pose.orientation.w = 1.0
 
         rospy.loginfo(f"[SmartNav] Gidiliyor -> {x},{y}")
         self.client.send_goal(goal)
@@ -101,26 +115,29 @@ class SmartNavigator:
                 if bypass: return False
 
             # --- 1. HIZ BÖLGESİ KONTROLÜ ---
-            # Not: Burada robotun o anki konumunu yaklaşık olarak hedef üzerinden varsayıyoruz
-            # Veya TF listener eklenebilir. Basitlik için hız kontrolü asenkron yapılabilir.
-            # Ancak en doğrusu GUI tarafındaki timer ile veya buraya tf ekleyerek yapmaktır.
-            # Şimdilik bu özelliği GUI tarafı tetikleyeceği için oraya bırakıyoruz.
+            try:
+                (trans, rot) = self.tf_listener.lookupTransform('/map', '/base_footprint', rospy.Time(0))
+                current_x = trans[0]
+                current_y = trans[1]
+                self.check_speed_zones(current_x, current_y)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                pass 
             
-            # --- 2. ENGEL KONTROLÜ ---
-            if not bypass:
-                if self.current_tunnel_distance < 1.2:
-                    if not waiting:
-                        self.client.cancel_goal()
-                        waiting = True
-                        timer = rospy.get_time()
-                        rospy.logwarn("ENGEL VAR! Bekleniyor...")
-                    elif (rospy.get_time() - timer) > 5.0:
-                        rospy.logwarn("DOLANMA MODU.")
-                        bypass = True; waiting = False
-                        self.client.send_goal(goal)
-                elif waiting and self.current_tunnel_distance > 1.4:
-                    waiting = False
-                    self.client.send_goal(goal)
+            # --- 2. ENGEL KONTROLÜ (İPTAL EDİLDİ) ---
+            # if not bypass:
+            #     if self.current_tunnel_distance < 1.2:
+            #         if not waiting:
+            #             self.client.cancel_goal()
+            #             waiting = True
+            #             timer = rospy.get_time()
+            #             rospy.logwarn("ENGEL VAR! Bekleniyor...")
+            #         elif (rospy.get_time() - timer) > 5.0:
+            #             rospy.logwarn("DOLANMA MODU.")
+            #             bypass = True; waiting = False
+            #             self.client.send_goal(goal)
+            #     elif waiting and self.current_tunnel_distance > 1.4:
+            #         waiting = False
+            #         self.client.send_goal(goal)
             
             rospy.sleep(0.1)
         return False

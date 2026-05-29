@@ -1,4 +1,4 @@
-transform_tolerance: 0.5
+transform_tolerance: 1.0
 
 # --- Engel Algılama Mesafeleri ---
 obstacle_range: 7.0
